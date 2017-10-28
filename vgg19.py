@@ -21,21 +21,19 @@ class Vgg19:
         self.dropout = dropout
         self.layers = []
 
-    def build(self, rgb, train_mode=None):
+    def build(self, bgr, train_mode=None):
         """
         load variable from npy to build the VGG
 
-        :param rgb: rgb image [batch, height, width, 3] values scaled [0, 1]
+        :param bgr: bgr image [batch, height, width, 3] values scaled [0, 255]
         :param train_mode: a bool tensor, usually a placeholder: if True, dropout will be turned on
         """
 
-        rgb_scaled = rgb * 255.0
-
-        # Convert RGB to BGR
-        red, green, blue = tf.split(axis=3, num_or_size_splits=3, value=rgb_scaled)
-        assert red.get_shape().as_list()[1:] == [224, 224, 1]
-        assert green.get_shape().as_list()[1:] == [224, 224, 1]
+        # subtract mean
+        blue, green, red = tf.split(axis=3, num_or_size_splits=3, value=rgb_scaled)
         assert blue.get_shape().as_list()[1:] == [224, 224, 1]
+        assert green.get_shape().as_list()[1:] == [224, 224, 1]
+        assert red.get_shape().as_list()[1:] == [224, 224, 1]
         bgr = tf.concat(axis=3, values=[
             blue - VGG_MEAN[0],
             green - VGG_MEAN[1],
