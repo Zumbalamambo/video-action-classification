@@ -30,7 +30,7 @@ class Vgg19:
         """
 
         # subtract mean
-        blue, green, red = tf.split(axis=3, num_or_size_splits=3, value=rgb_scaled)
+        blue, green, red = tf.split(axis=3, num_or_size_splits=3, value=bgr)
         assert blue.get_shape().as_list()[1:] == [224, 224, 1]
         assert green.get_shape().as_list()[1:] == [224, 224, 1]
         assert red.get_shape().as_list()[1:] == [224, 224, 1]
