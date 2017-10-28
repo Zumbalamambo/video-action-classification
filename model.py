@@ -27,6 +27,8 @@ def get_video(file, color=True):
     else:
         frames = np.zeros((num_frames, 224, 224))
 
+    # load video into numpy array in the following format:
+    # ar = [num_frames, 224, 224, 3]
     k=0
     while cap.isOpened():
         ret, frame = cap.read()
@@ -44,6 +46,8 @@ def get_data(L):
 
     file, label = trainlist[training_set_offset].split()
 
+    # if the file listed in training set doesn't exist, remove it from training set and continue on to next one
+    # mostly irrelevant for full-blown training but helpful for training on small subset of training set
     while not (os.path.isfile(res_dir+file) and os.path.isfile(optical_flow_dir+file)):
         del trainlist[training_set_offset]
         training_set_length = training_set_length - 1
@@ -55,10 +59,18 @@ def get_data(L):
     if training_set_offset >= training_set_length :
         training_set_offset = 0
 
+    # read spatial video
     _, spatial_frames = get_video(res_dir+file, color=True)
+    
+    # read optical flow video
     num_motion_frames, motion_frames = get_video(optical_flow_dir+file, color=False)
 
+    # stack optical flow frames efficiently using numpy's stride_tricks method
     sizeof_int32 = np.dtype(np.int32).itemsize
+
+    # stride by 1 frame with each time window and stride by 1 frame within frames in each time window
+    # let A, B, C... be consequent frames and L=3
+    # transformation can be represented as [A, B, C, ...] --> [[A, B, C], [B, C, D], [C, D, E], ...]
     stacked_motion_frames = np.lib.stride_tricks.as_strided(motion_frames, (num_motion_frames-L+1, L, 224, 224),
                                         (sizeof_int32*224*224, sizeof_int32*224*224, sizeof_int32*224, sizeof_int32))
     stacked_motion_frames = np.reshape(stacked_motion_frames, (num_motion_frames-L+1, 224, 224, L))
@@ -96,7 +108,10 @@ lr_proximal_gradient = 0.001
 lr_gradient = 0.001
 # lmbd1, lmbd2 : l1, l2 norm reg. constants for proximal gradient respectively
 lmbd1 = lmbd2 = 1e-5
+# number of steps to train
+num_steps = 100000
 
+# create and train the model
 with tf.Session() as sess:
     spatial_video = tf.placeholder(tf.float32, [None, 224, 224, 3])
     stacked_flow = tf.placeholder(tf.float32, [None, 224, 224, L])
@@ -163,17 +178,15 @@ with tf.Session() as sess:
     sess.run(tf.global_variables_initializer(), feed_dict=feed_dict)
     
     feed_dict[spatial_video] = feed_dict[stacked_flow] = feed_dict[labels] = None
-    spatial_frames = np.zeros((1, 224, 224, 3))
-    stacked_motion_frames = np.zeros((1, 224, 224, 10))
-    label = 1
-    
-    for i in range(10):
+
+    for i in range(num_steps):
         spatial_frames, stacked_motion_frames, label = get_data(L)
         feed_dict[spatial_video] = spatial_frames
         feed_dict[stacked_flow] = stacked_motion_frames
         feed_dict[labels] = np.array([label])
         _, _, l = sess.run([gd_opt, pgd_opt, loss], feed_dict=feed_dict)
         print(l)
+        time.sleep(60)
 
 
 
