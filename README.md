@@ -10,6 +10,6 @@ Learning Framework for Video Classification"
 * cnnm.py : Cnn-M architecture implementation
 * vgg.py : Vgg19 architecture implementation
 
-Cnn-M and Vgg19 implementations support memory efficient weight loading using placeholders to avoid copying constant numpy arrays  throught the graph. Both models also support a saving weights into a numpy dump.
+Cnn-M and Vgg19 implementations support memory efficient weight loading using placeholders to avoid copying constant numpy arrays  throught the graph. Both models also support saving weights into a numpy dumps.
 
 Vgg19 implementation is based on https://github.com/machrisaa/tensorflow-vgg. But in order to allow memory efficient loading/saving, the model has been heavily modified thus pre-trained weights have a different internal structure to the base model above.
