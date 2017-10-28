@@ -48,15 +48,20 @@ for i, file in enumerate(flist):
     frame1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
 
     while cap.isOpened() :
+        # read frame
         ret, frame2 = cap.read()
         if not ret :
             break
 
+        # resize and save frame in spatial stream
         frame2 = cv2.resize(frame2, (224, 224))
         resized_video.write(frame2)
-        frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
 
+        # compute optical flow
+        frame2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
         flow = cv2.calcOpticalFlowFarneback(frame1, frame2, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+
+        # map flow from [-bound, bound] to [0, 255] w/clipping and save optical flow into optical flow stream
         flow = np.round((flow + bound) / (2. * bound) * 255.)
         flow[flow < 0] = 0
         flow[flow > 255] = 255
@@ -64,6 +69,7 @@ for i, file in enumerate(flist):
         flow_video.write(flow[..., 0].astype('u1'))
         flow_video.write(flow[..., 1].astype('u1'))
 
+        # set last frame to next
         frame1 = frame2
 
     flow_video.release()
