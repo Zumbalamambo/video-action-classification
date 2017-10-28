@@ -3,8 +3,6 @@ import tensorflow as tf
 import numpy as np
 from functools import reduce
 
-VGG_MEAN = [103.939, 116.779, 123.68]
-
 
 class CnnM:
     """
@@ -19,15 +17,18 @@ class CnnM:
         self.dropout = dropout
         self.layers = []
 
-    def build(self, rgb, useDropout=None):
+    def build(self, bgr, useDropout=None):
         """
         load variable from npy to build the VGG
 
-        :param rgb: rgb image [batch, height, width, 3] values scaled [0, 1]
+        :param bgr: bgr image [batch, height, width, channel_depth=L] values scaled [0, 255]
         :param useDropout: a bool tensor, usually a placeholder: if True, dropout will be turned on
         """
 
-        self.conv1 = self.conv_layer(rgb, self.L, 96, kernel_size=7, stride=2, name="conv1")
+        # optical flow was converted from [-bound, bound] to [0, 255]
+        # subtract the "gray" mean
+        bgr = bgr - 255/2
+        self.conv1 = self.conv_layer(bgr, self.L, 96, kernel_size=7, stride=2, name="conv1")
         self.pool1 = self.max_pool(self.conv1, name='pool1')
 
         self.conv2 = self.conv_layer(self.pool1, 96, 256, kernel_size=5, stride=2, name="conv2")
